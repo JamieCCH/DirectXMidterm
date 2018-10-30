@@ -7,6 +7,116 @@
 
 using namespace DirectX;
 
+GeometryGenerator::MeshData GeometryGenerator::CreateCandy(float width, float height, uint32 numSubdivisions)
+{
+	MeshData meshData;
+	float pi = 3.141592f;
+	float r = width / 2;
+
+	float x = cos((2 * pi) / 6)*r;
+	float y = height / 2;
+	float z = sin((2 * pi) / 6)*r;
+
+	XMFLOAT3 pos[18];
+
+	//the top 6 vertices
+	for (int i = 0; i < 6; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6)*r, y, sin((i * 2 * pi) / 6)*r)
+		};
+	}
+
+	// the middle 6 vertices
+	for (int i = 6; i < 12; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(2*cos((i * 2 * pi) / 6)*r, 0, 2*sin((i * 2 * pi) / 6)*r)
+		};
+	}
+
+	//the bottom 6 vertices
+	for (int i = 12; i < 18; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6)*r, -y, sin((i * 2 * pi) / 6)*r)
+		};
+	}
+
+	meshData.Vertices.resize(18);
+
+	for (uint32 i = 0; i < 18; ++i)
+		meshData.Vertices[i].Position = pos[i];
+
+	for (uint32 i = 0; i < meshData.Vertices.size(); ++i)
+	{
+		XMVECTOR n = XMVector3Normalize(XMLoadFloat3(&meshData.Vertices[i].Position));
+		XMStoreFloat3(&meshData.Vertices[i].Normal, n);
+	}
+
+	uint32 i[96] = {
+		//the top 4 triangles
+		0,5,4,
+		0,4,3,
+		0,3,2,
+		0,2,1,
+		//the bottom 4 triangles
+		12,13,14,
+		12,14,15,
+		12,15,16,
+		12,16,17,
+		//the top side face 1
+		5, 0, 6,
+		5, 6, 11,
+		//the top side face 2
+		0, 1, 7,
+		0, 7, 6,
+		//the top side face 3
+		1, 2, 8,
+		1, 8, 7,
+		//the top side face 4
+		2, 3, 9,
+		2, 9, 8,
+		//the top side face 5
+		3, 4, 10,
+		3, 10, 9,
+		//the top side face 6
+		4, 5, 11,
+		4, 11, 10,
+		//the buttom side face 1
+		11, 6, 12,
+		11, 12, 17,
+		//the buttom side face 2
+		6, 7, 13,
+		6, 13, 12,
+		//the buttom side face 3
+		7, 8, 14, 
+		7, 14, 13,
+		//the buttom side face 4
+		8, 9, 15,
+		8, 15, 14,
+		//the buttom side face 5
+		9, 10, 16,
+		9, 16, 15,
+		//the buttom side face 6
+		10, 11, 17,
+		10, 17, 16,
+	};
+
+	meshData.Indices32.assign(&i[0], &i[96]);
+
+	// Put a cap on the number of subdivisions.
+	numSubdivisions = std::min<uint32>(numSubdivisions, 6u);
+
+	for (uint32 i = 0; i < numSubdivisions; ++i)
+		Subdivide(meshData);
+
+	return meshData;
+}
+
 GeometryGenerator::MeshData GeometryGenerator::CreateBox(float width, float height, float depth, uint32 numSubdivisions)
 {
     MeshData meshData;
