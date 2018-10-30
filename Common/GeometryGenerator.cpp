@@ -188,8 +188,8 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSquareBucket(float side, fl
 	v[34] = Vertex(-iw, +h2, -id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
 	v[35] = Vertex(-iw, -h2, -id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
 
-	...// Fill in the inner right face vertex data.
-		v[36] = Vertex(+iw, -h2, -id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+	// Fill in the inner right face vertex data.
+	v[36] = Vertex(+iw, -h2, -id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 	v[37] = Vertex(+iw, +h2, -id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
 	v[38] = Vertex(+iw, +h2, +id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
 	v[39] = Vertex(+iw, -h2, +id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
