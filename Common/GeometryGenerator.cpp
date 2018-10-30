@@ -117,6 +117,193 @@ GeometryGenerator::MeshData GeometryGenerator::CreateCandy(float width, float he
 	return meshData;
 }
 
+GeometryGenerator::MeshData GeometryGenerator::CreateSquareBucket(float side, float height, float innerSide)
+{
+	MeshData meshData;
+
+	//
+	// Create the vertices.
+	//
+
+	Vertex v[56];
+
+	float w2 = 0.5f*side;
+	float h2 = 0.5f*height;
+	float d2 = 0.5f*side;
+
+	float iw = 0.5f*innerSide;
+	float id = 0.5f*innerSide;
+
+	// Fill in the front face vertex data.
+	v[0] = Vertex(-w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[1] = Vertex(-w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[2] = Vertex(+w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[3] = Vertex(+w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// Fill in the back face vertex data.
+	v[4] = Vertex(-w2, -h2, +d2, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	v[5] = Vertex(+w2, -h2, +d2, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[6] = Vertex(+w2, +h2, +d2, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[7] = Vertex(-w2, +h2, +d2, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+
+	// Fill in the bottom face vertex data.
+	v[8] = Vertex(-w2, -h2, -d2, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	v[9] = Vertex(+w2, -h2, -d2, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[10] = Vertex(+w2, -h2, +d2, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[11] = Vertex(-w2, -h2, +d2, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+
+	// Fill in the left face vertex data.
+	v[12] = Vertex(-w2, -h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+	v[13] = Vertex(-w2, +h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
+	v[14] = Vertex(-w2, +h2, -d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
+	v[15] = Vertex(-w2, -h2, -d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
+
+	// Fill in the right face vertex data.
+	v[16] = Vertex(+w2, -h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+	v[17] = Vertex(+w2, +h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	v[18] = Vertex(+w2, +h2, +d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+	v[19] = Vertex(+w2, -h2, +d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+
+	// Fill in the inner front face vertex data.
+	v[20] = Vertex(-iw, -h2, -id, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[21] = Vertex(-iw, +h2, -id, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[22] = Vertex(+iw, +h2, -id, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[23] = Vertex(+iw, -h2, -id, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// Fill in the inner back face vertex data.
+	v[24] = Vertex(-iw, -h2, +id, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	v[25] = Vertex(+iw, -h2, +id, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[26] = Vertex(+iw, +h2, +id, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[27] = Vertex(-iw, +h2, +id, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+
+	// Fill in the inner bottom face vertex data.
+	v[28] = Vertex(-iw, -h2, -id, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	v[29] = Vertex(+iw, -h2, -id, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[30] = Vertex(+iw, -h2, +id, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[31] = Vertex(-iw, -h2, +id, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+
+	// Fill in the inner left face vertex data.
+	v[32] = Vertex(-iw, -h2, +id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+	v[33] = Vertex(-iw, +h2, +id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
+	v[34] = Vertex(-iw, +h2, -id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
+	v[35] = Vertex(-iw, -h2, -id, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
+
+	...// Fill in the inner right face vertex data.
+		v[36] = Vertex(+iw, -h2, -id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+	v[37] = Vertex(+iw, +h2, -id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	v[38] = Vertex(+iw, +h2, +id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+	v[39] = Vertex(+iw, -h2, +id, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+
+	// Fill in the rim front face vertex data.
+	v[40] = Vertex(-w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[41] = Vertex(-iw, +h2, -id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[42] = Vertex(+iw, +h2, -id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[43] = Vertex(+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// Fill in the rim back face vertex data.
+	v[44] = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[45] = Vertex(-iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[46] = Vertex(+iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[47] = Vertex(+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// Fill in the rim left face vertex data.
+	v[48] = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[49] = Vertex(-iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[50] = Vertex(-iw, +h2, -id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[51] = Vertex(-w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+	// Fill in the rim right face vertex data.
+	v[52] = Vertex(+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[53] = Vertex(+iw, +h2, -id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[54] = Vertex(+iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[55] = Vertex(+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	
+	meshData.Vertices.assign(&v[0], &v[56]);
+
+	//
+	// Create the indices.
+	//
+
+	uint32 i[108];
+
+	// Fill in the front face index data
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+
+	// Fill in the back face index data
+	i[6] = 4; i[7] = 5; i[8] = 6;
+	i[9] = 4; i[10] = 6; i[11] = 7;
+
+	// Fill in the bottom face index data
+	i[12] = 8; i[13] = 9; i[14] = 10;
+	i[15] = 8; i[16] = 10; i[17] = 11;
+
+	// Fill in the left face index data
+	i[18] = 12; i[19] = 13; i[20] = 14;
+	i[21] = 12; i[22] = 14; i[23] = 15;
+
+	// Fill in the right face index data
+	i[24] = 16; i[25] = 17; i[26] = 18;
+	i[27] = 16; i[28] = 18; i[29] = 19;
+
+	// Fill in the inner front face index data
+	i[30] = 20; i[31] = 22; i[32] = 21;
+	i[33] = 20; i[34] = 23; i[35] = 22;
+
+	// Fill in the inner back face index data
+	i[36] = 24; i[37] = 26; i[38] = 25;
+	i[39] = 24; i[40] = 27; i[41] = 26;
+
+	// Fill in the inner bottom face index data
+	i[42] = 28; i[43] = 30; i[44] = 29;
+	i[45] = 28; i[46] = 31; i[47] = 30;
+
+	// Fill in the inner left face index data
+	i[48] = 32; i[49] = 34; i[50] = 33;
+	i[51] = 32; i[52] = 35; i[53] = 34;
+
+	// Fill in the inner right face index data
+	i[54] = 36; i[55] = 38; i[56] = 37;
+	i[57] = 36; i[58] = 39; i[59] = 38;
+
+	//Lid Front
+	i[60] = 1; i[61] = 21; i[62] = 22;
+	i[63] = 1; i[64] = 22; i[65] = 2;
+
+	//Lid Back
+	i[66] = 4; i[67] = 24; i[68] = 25;
+	i[69] = 4; i[70] = 25; i[71] = 5;
+
+	//Lid Left
+	i[72] = 12; i[73] = 32; i[74] = 33;
+	i[75] = 12; i[76] = 33; i[77] = 13;
+
+	//Lid Right
+	i[78] = 16; i[79] = 26; i[80] = 27;
+	i[81] = 16; i[82] = 27; i[83] = 17;
+
+	//Rim Front
+	i[84] = 40; i[85] = 41; i[86] = 42;
+	i[87] = 40; i[88] = 42; i[89] = 43;
+
+	//Rim Back
+	i[90] = 44; i[91] = 45; i[92] = 46;
+	i[93] = 44; i[94] = 46; i[95] = 47;
+
+	//Rim Left
+	i[96] = 48; i[97] = 49; i[98] = 50;
+	i[99] = 48; i[100] = 50; i[101] = 51;
+
+	//Rim Right
+	i[102] = 52; i[103] = 53; i[104] = 54;
+	i[105] = 52; i[106] = 54; i[107] = 55;
+
+	meshData.Indices32.assign(&i[0], &i[108]);
+
+	return meshData;
+}
+
+
 GeometryGenerator::MeshData GeometryGenerator::CreateBox(float width, float height, float depth, uint32 numSubdivisions)
 {
     MeshData meshData;

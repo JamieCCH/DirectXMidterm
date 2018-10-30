@@ -166,7 +166,7 @@ LitColumnsApp::~LitColumnsApp()
 
 bool LitColumnsApp::Initialize()
 {
-	srand(time(NULL));
+	srand((unsigned)time(NULL));
 
     if(!D3DApp::Initialize())
         return false;
@@ -972,13 +972,19 @@ void LitColumnsApp::BuildRenderItems()
 	FXMVECTOR AxisY = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	FXMVECTOR AxisZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
+	FLOAT boxWidth = rand() % 10 + 1;
+	FLOAT randPos = rand() % 1 + .5f;
+	UINT candyNum = rand() % 50 + 5;
+	FLOAT randAxisX = rand() % 2 - 1;
+	FLOAT randAxisY = rand() % 2 - 1;
+	FLOAT randAxisZ = rand() % 2 - 1;
+	UINT randAngle = rand() % 360 - 10;
+	XMMATRIX canyRotate = XMMatrixRotationAxis(XMVectorSet(randAxisX, randAxisY, randAxisZ, 0.0f), XMConvertToRadians(randAngle));
 
-	/*UINT candyNum = rand() % 5 + 1;
-	std::cout << candyNum;*/
 	UINT objCBIndex = 0;
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 0; i < candyNum; ++i) {
 		auto pyramidRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation((.625f - i * 1.25f), 2.8f, -.7f));
+		XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(( i * 0.5f)*boxWidth*-1, .8f*randPos, -.7f*randPos));
 		pyramidRitem->TexTransform = MathHelper::Identity4x4();
 		pyramidRitem->Mat = mMaterials["wedgeMat"].get();
 	/*	if (objCBIndex > 2)
@@ -995,7 +1001,7 @@ void LitColumnsApp::BuildRenderItems()
 	/*auto pyramidRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(0.f, 0.f, 0.f));
 	XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	pyramidRitem->ObjCBIndex = 0;
+	pyramidRitem->ObjCBIndex = candyNum+1;
 	pyramidRitem->Mat = mMaterials["wedgeMat"].get();
 	pyramidRitem->Geo = mGeometries["shapeGeo"].get();
 	pyramidRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;

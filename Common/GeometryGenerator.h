@@ -162,6 +162,11 @@ public:
 	///</summary>
 	MeshData CreateCandy(float width, float height, uint32 numSubdivisions);
 
+	///<summary>
+  ///Create a square box
+  ///</summary>
+	MeshData CreateSquareBucket(float side, float height, float innerSide);
+
 
 
 private:
