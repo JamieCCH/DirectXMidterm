@@ -342,7 +342,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateHexagonBucket(float width, 
 
 	for (uint32 i = 0; i < meshData.Vertices.size(); ++i)
 	{
-		XMVECTOR n = XMVector3Normalize(XMLoadFloat3(&meshData.Vertices[i].Position));
+		XMVECTOR n = -XMVector3Normalize(XMLoadFloat3(&meshData.Vertices[i].Position));
 		XMStoreFloat3(&meshData.Vertices[i].Normal, n);
 	}
 
