@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
+#include <random>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -122,6 +123,9 @@ private:
 	XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
 	XMFLOAT4X4 mView = MathHelper::Identity4x4();
 	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+
+	XMFLOAT4 ambientLightColor = XMFLOAT4(0.f,0.f,0.f,0.f);
+	UINT pointIndex = 1;
 
     float mTheta = 1.5f*XM_PI;
     float mPhi = 0.2f*XM_PI;
@@ -432,13 +436,7 @@ void LitColumnsApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.FarZ = 1000.0f;
 	mMainPassCB.TotalTime = gt.TotalTime();
 	mMainPassCB.DeltaTime = gt.DeltaTime();
-	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
-	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.8f, 0.8f, 0.8f };
-	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
-	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+	mMainPassCB.AmbientLight = ambientLightColor;
 
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
@@ -498,19 +496,9 @@ void LitColumnsApp::BuildShadersAndInputLayout()
 void LitColumnsApp::BuildShapeGeometry()
 {
     GeometryGenerator geoGen;
-	GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 3);
-	GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
-	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
-	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.5f, 3.0f, 20, 20);
-	GeometryGenerator::MeshData diamond = geoGen.CreateDiamond(1.f, 1.f);
-	GeometryGenerator::MeshData wedge = geoGen.CreateWedge(1.5f, 1.5f, 1.5f, 3);
-	GeometryGenerator::MeshData octahedron = geoGen.CreateOctahedron(0.5f);
-	GeometryGenerator::MeshData triangularPrism = geoGen.CreateTriangularPrism(1.f, 1.f, 1.f, 3);
-	GeometryGenerator::MeshData hexagon = geoGen.CreateHexagon(1.5f, 1.5f, 3);
-	GeometryGenerator::MeshData octagon = geoGen.CreateOctagon(1.5f, 1.5f, 3);
-	GeometryGenerator::MeshData cone = geoGen.CreateCone(1.0f, 1.0f, 20, 20);
-	GeometryGenerator::MeshData pyramid = geoGen.CreateCandy(1.f, 2.f, 3);
-
+	GeometryGenerator::MeshData candy = geoGen.CreateCandy(1.f, 2.f, 3);
+	GeometryGenerator::MeshData squareBucket = geoGen.CreateSquareBucket(4.f, 2.f, 3.5f);
+	GeometryGenerator::MeshData hexagonBucket = geoGen.CreateHexagonBucket(2.f, 2.f);
 
 	//
 	// We are concatenating all the geometry into one big vertex/index buffer.  So
@@ -518,94 +506,29 @@ void LitColumnsApp::BuildShapeGeometry()
 	//
 
 	// Cache the vertex offsets to each object in the concatenated vertex buffer.
-	UINT boxVertexOffset = 0;
-	UINT gridVertexOffset = (UINT)box.Vertices.size();
-	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
-	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
-	UINT diamondVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
-	UINT wedgeVertexOffset = diamondVertexOffset + (UINT)diamond.Vertices.size();
-	UINT octahedronVertexOffset = wedgeVertexOffset + (UINT)wedge.Vertices.size();
-	UINT triPrismVertexOffset = octahedronVertexOffset + (UINT)octahedron.Vertices.size();
-	UINT hexagonVertexOffset = triPrismVertexOffset + (UINT)triangularPrism.Vertices.size();
-	UINT octagonVertexOffset = hexagonVertexOffset + (UINT)hexagon.Vertices.size();
-	UINT coneVertexOffset = octagonVertexOffset + (UINT)octagon.Vertices.size();
-	UINT pyramidVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
+	UINT candyVertexOffset = 0;
+	UINT squareBucketVertexOffset = (UINT)candy.Vertices.size();
+	UINT hexagonBucketVertexOffset = squareBucketVertexOffset + (UINT)squareBucket.Vertices.size();
 
 	// Cache the starting index for each object in the concatenated index buffer.
-	UINT boxIndexOffset = 0;
-	UINT gridIndexOffset = (UINT)box.Indices32.size();
-	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
-	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
-	UINT diamondIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
-	UINT wedgeIndexOffset = diamondIndexOffset + (UINT)diamond.Indices32.size();
-	UINT octahedronIndexOffset = wedgeIndexOffset + (UINT)wedge.Indices32.size();
-	UINT triPrismIndexOffset = octahedronIndexOffset + (UINT)octahedron.Indices32.size();
-	UINT hexagonIndexOffset = triPrismIndexOffset + (UINT)triangularPrism.Indices32.size();
-	UINT octagonIndexOffset = hexagonIndexOffset + (UINT)hexagon.Indices32.size();
-	UINT coneIndexOffset = octagonIndexOffset + (UINT)octagon.Indices32.size();
-	UINT pyramidIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
-	
+	UINT candyIndexOffset = 0;
+	UINT squareBucketIndexOffset = (UINT)candy.Indices32.size();
+	UINT hexagonBucketIndexOffset = squareBucketIndexOffset + (UINT)squareBucket.Indices32.size();
 
-	SubmeshGeometry boxSubmesh;
-	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
-	boxSubmesh.StartIndexLocation = boxIndexOffset;
-	boxSubmesh.BaseVertexLocation = boxVertexOffset;
+	SubmeshGeometry candySubmesh;
+	candySubmesh.IndexCount = (UINT)candy.Indices32.size();
+	candySubmesh.StartIndexLocation = candyIndexOffset;
+	candySubmesh.BaseVertexLocation = candyVertexOffset;
 
-	SubmeshGeometry gridSubmesh;
-	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-	gridSubmesh.StartIndexLocation = gridIndexOffset;
-	gridSubmesh.BaseVertexLocation = gridVertexOffset;
+	SubmeshGeometry squareBucketSubmesh;
+	squareBucketSubmesh.IndexCount = (UINT)squareBucket.Indices32.size();
+	squareBucketSubmesh.StartIndexLocation = squareBucketIndexOffset;
+	squareBucketSubmesh.BaseVertexLocation = squareBucketVertexOffset;
 
-	SubmeshGeometry sphereSubmesh;
-	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
-	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
-
-	SubmeshGeometry cylinderSubmesh;
-	cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
-	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
-	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
-
-	SubmeshGeometry diamondSubmesh;
-	diamondSubmesh.IndexCount = (UINT)diamond.Indices32.size();
-	diamondSubmesh.StartIndexLocation = diamondIndexOffset;
-	diamondSubmesh.BaseVertexLocation = diamondVertexOffset;
-
-	SubmeshGeometry wedgeSubmesh;
-	wedgeSubmesh.IndexCount = (UINT)wedge.Indices32.size();
-	wedgeSubmesh.StartIndexLocation = wedgeIndexOffset;
-	wedgeSubmesh.BaseVertexLocation = wedgeVertexOffset;
-
-	SubmeshGeometry octahedronSubmesh;
-	octahedronSubmesh.IndexCount = (UINT)octahedron.Indices32.size();
-	octahedronSubmesh.StartIndexLocation = octahedronIndexOffset;
-	octahedronSubmesh.BaseVertexLocation = octahedronVertexOffset;
-
-	SubmeshGeometry triPrismSubmesh;
-	triPrismSubmesh.IndexCount = (UINT)triangularPrism.Indices32.size();
-	triPrismSubmesh.StartIndexLocation = triPrismIndexOffset;
-	triPrismSubmesh.BaseVertexLocation = triPrismVertexOffset;
-
-	SubmeshGeometry hexagonSubmesh;
-	hexagonSubmesh.IndexCount = (UINT)hexagon.Indices32.size();
-	hexagonSubmesh.StartIndexLocation = hexagonIndexOffset;
-	hexagonSubmesh.BaseVertexLocation = hexagonVertexOffset;
-
-	SubmeshGeometry octagonSubmesh;
-	octagonSubmesh.IndexCount = (UINT)octagon.Indices32.size();
-	octagonSubmesh.StartIndexLocation = octagonIndexOffset;
-	octagonSubmesh.BaseVertexLocation = octagonVertexOffset;
-
-	SubmeshGeometry coneSubmesh;
-	coneSubmesh.IndexCount = (UINT)cone.Indices32.size();
-	coneSubmesh.StartIndexLocation = coneIndexOffset;
-	coneSubmesh.BaseVertexLocation = coneVertexOffset;
-
-
-	SubmeshGeometry pyramidSubmesh;
-	pyramidSubmesh.IndexCount = (UINT)pyramid.Indices32.size();
-	pyramidSubmesh.StartIndexLocation = pyramidIndexOffset;
-	pyramidSubmesh.BaseVertexLocation = pyramidVertexOffset;
+	SubmeshGeometry hexagonBucketSubmesh;
+	hexagonBucketSubmesh.IndexCount = (UINT)hexagonBucket.Indices32.size();
+	hexagonBucketSubmesh.StartIndexLocation = hexagonBucketIndexOffset;
+	hexagonBucketSubmesh.BaseVertexLocation = hexagonBucketVertexOffset;
 
 	//
 	// Extract the vertex elements we are interested in and pack the
@@ -613,99 +536,30 @@ void LitColumnsApp::BuildShapeGeometry()
 	//
 
 	auto totalVertexCount =
-		box.Vertices.size() +
-		grid.Vertices.size() +
-		sphere.Vertices.size() +
-		cylinder.Vertices.size() +
-		diamond.Vertices.size() +
-		wedge.Vertices.size() +
-		octahedron.Vertices.size() +
-		triangularPrism.Vertices.size() +
-		hexagon.Vertices.size() +
-		octagon.Vertices.size() +
-		cone.Vertices.size() +
-		pyramid.Vertices.size();
+		candy.Vertices.size() +
+		squareBucket.Vertices.size() + 
+		hexagonBucket.Vertices.size();
 
 	std::vector<Vertex> vertices(totalVertexCount);
 
 	UINT k = 0;
-	for(size_t i = 0; i < box.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Normal = box.Vertices[i].Normal;
+	for (size_t i = 0; i < candy.Vertices.size(); ++i, ++k) {
+		vertices[k].Pos = candy.Vertices[i].Position;
+		vertices[k].Normal = candy.Vertices[i].Normal;
 	}
-
-	for(size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Normal = grid.Vertices[i].Normal;
+	for (size_t i = 0; i < squareBucket.Vertices.size(); ++i, ++k) {
+		vertices[k].Pos = squareBucket.Vertices[i].Position;
+		vertices[k].Normal = squareBucket.Vertices[i].Normal;
 	}
-
-	for(size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = sphere.Vertices[i].Position;
-		vertices[k].Normal = sphere.Vertices[i].Normal;
-	}
-
-	for(size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = cylinder.Vertices[i].Position;
-		vertices[k].Normal = cylinder.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < diamond.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = diamond.Vertices[i].Position;
-		vertices[k].Normal = diamond.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < wedge.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = wedge.Vertices[i].Position;
-		vertices[k].Normal = wedge.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < octahedron.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = octahedron.Vertices[i].Position;
-		vertices[k].Normal = octahedron.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < triangularPrism.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = triangularPrism.Vertices[i].Position;
-		vertices[k].Normal = triangularPrism.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < hexagon.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = hexagon.Vertices[i].Position;
-		vertices[k].Normal = hexagon.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < octagon.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = octagon.Vertices[i].Position;
-		vertices[k].Normal = octagon.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = cone.Vertices[i].Position;
-		vertices[k].Normal = cone.Vertices[i].Normal;
-	}
-
-	for (size_t i = 0; i < pyramid.Vertices.size(); ++i, ++k) {
-		vertices[k].Pos = pyramid.Vertices[i].Position;
-		vertices[k].Normal = pyramid.Vertices[i].Normal;
+	for (size_t i = 0; i < hexagonBucket.Vertices.size(); ++i, ++k) {
+		vertices[k].Pos = hexagonBucket.Vertices[i].Position;
+		vertices[k].Normal = hexagonBucket.Vertices[i].Normal;
 	}
 
 	std::vector<std::uint16_t> indices;
-	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
-	indices.insert(indices.end(), std::begin(diamond.GetIndices16()), std::end(diamond.GetIndices16()));
-	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
-	indices.insert(indices.end(), std::begin(octahedron.GetIndices16()), std::end(octahedron.GetIndices16()));
-	indices.insert(indices.end(), std::begin(triangularPrism.GetIndices16()), std::end(triangularPrism.GetIndices16()));
-	indices.insert(indices.end(), std::begin(hexagon.GetIndices16()), std::end(hexagon.GetIndices16()));
-	indices.insert(indices.end(), std::begin(octagon.GetIndices16()), std::end(octagon.GetIndices16()));
-	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
-	indices.insert(indices.end(), std::begin(pyramid.GetIndices16()), std::end(pyramid.GetIndices16()));
+	indices.insert(indices.end(), std::begin(candy.GetIndices16()), std::end(candy.GetIndices16()));
+	indices.insert(indices.end(), std::begin(squareBucket.GetIndices16()), std::end(squareBucket.GetIndices16()));
+	indices.insert(indices.end(), std::begin(hexagonBucket.GetIndices16()), std::end(hexagonBucket.GetIndices16()));
 
     const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
     const UINT ibByteSize = (UINT)indices.size()  * sizeof(std::uint16_t);
@@ -730,96 +584,12 @@ void LitColumnsApp::BuildShapeGeometry()
 	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
 	geo->IndexBufferByteSize = ibByteSize;
 
-	geo->DrawArgs["box"] = boxSubmesh;
-	geo->DrawArgs["grid"] = gridSubmesh;
-	geo->DrawArgs["sphere"] = sphereSubmesh;
-	geo->DrawArgs["cylinder"] = cylinderSubmesh;
-	geo->DrawArgs["diamond"] = diamondSubmesh;
-	geo->DrawArgs["wedge"] = wedgeSubmesh;
-	geo->DrawArgs["octahedron"] = octahedronSubmesh;
-	geo->DrawArgs["triangularPrism"] = triPrismSubmesh;
-	geo->DrawArgs["hexagon"] = hexagonSubmesh;
-	geo->DrawArgs["octagon"] = octagonSubmesh;
-	geo->DrawArgs["cone"] = coneSubmesh;
-	geo->DrawArgs["pyramid"] = pyramidSubmesh;
+	geo->DrawArgs["candy"] = candySubmesh;
+	geo->DrawArgs["squareBucket"] = squareBucketSubmesh;
+	geo->DrawArgs["hexagonBucket"] = hexagonBucketSubmesh;
 
 	mGeometries[geo->Name] = std::move(geo);
 }
-
-//void LitColumnsApp::BuildSkullGeometry()
-//{
-//	std::ifstream fin("Models/skull.txt");
-//
-//	if(!fin)
-//	{
-//		MessageBox(0, L"Models/skull.txt not found.", 0, 0);
-//		return;
-//	}
-//
-//	UINT vcount = 0;
-//	UINT tcount = 0;
-//	std::string ignore;
-//
-//	fin >> ignore >> vcount;
-//	fin >> ignore >> tcount;
-//	fin >> ignore >> ignore >> ignore >> ignore;
-//
-//	std::vector<Vertex> vertices(vcount);
-//	for(UINT i = 0; i < vcount; ++i)
-//	{
-//		fin >> vertices[i].Pos.x >> vertices[i].Pos.y >> vertices[i].Pos.z;
-//		fin >> vertices[i].Normal.x >> vertices[i].Normal.y >> vertices[i].Normal.z;
-//	}
-//
-//	fin >> ignore;
-//	fin >> ignore;
-//	fin >> ignore;
-//
-//	std::vector<std::int32_t> indices(3 * tcount);
-//	for(UINT i = 0; i < tcount; ++i)
-//	{
-//		fin >> indices[i * 3 + 0] >> indices[i * 3 + 1] >> indices[i * 3 + 2];
-//	}
-//
-//	fin.close();
-//
-//	//
-//	// Pack the indices of all the meshes into one index buffer.
-//	//
-//
-//	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-//
-//	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::int32_t);
-//
-//	auto geo = std::make_unique<MeshGeometry>();
-//	geo->Name = "skullGeo";
-//
-//	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-//	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-//
-//	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-//	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-//
-//	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-//		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-//
-//	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-//		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-//
-//	geo->VertexByteStride = sizeof(Vertex);
-//	geo->VertexBufferByteSize = vbByteSize;
-//	geo->IndexFormat = DXGI_FORMAT_R32_UINT;
-//	geo->IndexBufferByteSize = ibByteSize;
-//
-//	SubmeshGeometry submesh;
-//	submesh.IndexCount = (UINT)indices.size();
-//	submesh.StartIndexLocation = 0;
-//	submesh.BaseVertexLocation = 0;
-//
-//	geo->DrawArgs["skull"] = submesh;
-//
-//	mGeometries[geo->Name] = std::move(geo);
-//}
 
 void LitColumnsApp::BuildPSOs()
 {
@@ -865,406 +635,206 @@ void LitColumnsApp::BuildFrameResources()
 
 void LitColumnsApp::BuildMaterials()
 {
-	auto bricks0 = std::make_unique<Material>();
-	bricks0->Name = "bricks0";
-	bricks0->MatCBIndex = 0;
-	bricks0->DiffuseSrvHeapIndex = 0;
-	bricks0->DiffuseAlbedo = XMFLOAT4(Colors::ForestGreen);
-	bricks0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	bricks0->Roughness = 0.1f;
+	auto redCandy = std::make_unique<Material>();
+	redCandy->Name = "redCandy";
+	redCandy->MatCBIndex = 0;
+	redCandy->DiffuseSrvHeapIndex = 0;
+	redCandy->DiffuseAlbedo = XMFLOAT4(Colors::Red);
+	redCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	redCandy->Roughness = 0.1f;
 
-	auto stone0 = std::make_unique<Material>();
-	stone0->Name = "stone0";
-	stone0->MatCBIndex = 1;
-	stone0->DiffuseSrvHeapIndex = 1;
-	stone0->DiffuseAlbedo = XMFLOAT4(Colors::LightSteelBlue);
-	stone0->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	stone0->Roughness = 0.3f;
- 
-	auto tile0 = std::make_unique<Material>();
-	tile0->Name = "tile0";
-	tile0->MatCBIndex = 2;
-	tile0->DiffuseSrvHeapIndex = 2;
-	tile0->DiffuseAlbedo = XMFLOAT4(Colors::DimGray);
-	tile0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	tile0->Roughness = 0.2f;
+	auto blueCandy = std::make_unique<Material>();
+	blueCandy->Name = "blueCandy";
+	blueCandy->MatCBIndex = 1;
+	blueCandy->DiffuseSrvHeapIndex = 1;
+	blueCandy->DiffuseAlbedo = XMFLOAT4(Colors::Blue);
+	blueCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	blueCandy->Roughness = 0.1f;
 
-	/*auto skullMat = std::make_unique<Material>();
-	skullMat->Name = "skullMat";
-	skullMat->MatCBIndex = 3;
-	skullMat->DiffuseSrvHeapIndex = 3;
-	skullMat->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	skullMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	skullMat->Roughness = 0.3f;*/
+	auto greenCandy = std::make_unique<Material>();
+	greenCandy->Name = "greenCandy";
+	greenCandy->MatCBIndex = 2;
+	greenCandy->DiffuseSrvHeapIndex = 2;
+	greenCandy->DiffuseAlbedo = XMFLOAT4(Colors::Green);
+	greenCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	greenCandy->Roughness = 0.1f;
 
-	auto wedgeMat = std::make_unique<Material>();
-	wedgeMat->Name = "wedgeMat";
-	wedgeMat->MatCBIndex = 3;
-	wedgeMat->DiffuseSrvHeapIndex = 3;
-	wedgeMat->DiffuseAlbedo = XMFLOAT4(.98f, 0.55f, 0.94f, 1.f);
-	wedgeMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	wedgeMat->Roughness = 0.3f;
+	auto yellowCandy = std::make_unique<Material>();
+	yellowCandy->Name = "yellowCandy";
+	yellowCandy->MatCBIndex = 3;
+	yellowCandy->DiffuseSrvHeapIndex = 3;
+	yellowCandy->DiffuseAlbedo = XMFLOAT4(Colors::Yellow);
+	yellowCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	yellowCandy->Roughness = 0.1f;
 
-	auto diamondMat = std::make_unique<Material>();
-	diamondMat->Name = "diaMat";
-	diamondMat->MatCBIndex = 4;
-	diamondMat->DiffuseSrvHeapIndex = 4;
-	diamondMat->DiffuseAlbedo = XMFLOAT4(0.f, 0.f, 1.f, 1.f);
-	diamondMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	diamondMat->Roughness = 0.3f;
+	auto purpleCandy = std::make_unique<Material>();
+	purpleCandy->Name = "purpleCandy";
+	purpleCandy->MatCBIndex = 4;
+	purpleCandy->DiffuseSrvHeapIndex = 4;
+	purpleCandy->DiffuseAlbedo = XMFLOAT4(Colors::Purple);
+	purpleCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	purpleCandy->Roughness = 0.1f;
 
-	auto octahedronMat = std::make_unique<Material>();
-	octahedronMat->Name = "octahedronMat";
-	octahedronMat->MatCBIndex = 5;
-	octahedronMat->DiffuseSrvHeapIndex = 5;
-	octahedronMat->DiffuseAlbedo = XMFLOAT4(1.f, 0.f, 0.f, 1.f);
-	octahedronMat->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	octahedronMat->Roughness = 0.3f;
-
-	auto sky = std::make_unique<Material>();
-	sky->Name = "sky";
-	sky->MatCBIndex = 6;
-	sky->DiffuseSrvHeapIndex = 6;
-	sky->DiffuseAlbedo = XMFLOAT4(Colors::SkyBlue);
-	sky->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	sky->Roughness = 0.3f;
-
-	auto gold = std::make_unique<Material>();
-	gold->Name = "gold";
-	gold->MatCBIndex = 7;
-	gold->DiffuseSrvHeapIndex = 7;
-	gold->DiffuseAlbedo = XMFLOAT4(Colors::Goldenrod);
-	gold->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	gold->Roughness = 0.2f;
-
-	auto shineBlue = std::make_unique<Material>();
-	shineBlue->Name = "shineBlue";
-	shineBlue->MatCBIndex = 8;
-	shineBlue->DiffuseSrvHeapIndex = 8;
-	shineBlue->DiffuseAlbedo = XMFLOAT4(Colors::DeepSkyBlue);
-	shineBlue->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	shineBlue->Roughness = 0.05f;
-
-	auto shineRed = std::make_unique<Material>();
-	shineRed->Name = "shineRed";
-	shineRed->MatCBIndex = 9;
-	shineRed->DiffuseSrvHeapIndex = 9;
-	shineRed->DiffuseAlbedo = XMFLOAT4(.85f, .2f, .2f, 1.0f);
-	shineRed->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
-	shineRed->Roughness = 0.05f;
+	auto bucket = std::make_unique<Material>();
+	bucket->Name = "bucket";
+	bucket->MatCBIndex = 5;
+	bucket->DiffuseSrvHeapIndex = 5;
+	bucket->DiffuseAlbedo = XMFLOAT4(Colors::Beige);
+	bucket->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	bucket->Roughness = 0.6f;
 	
-	mMaterials["bricks0"] = std::move(bricks0);
-	mMaterials["stone0"] = std::move(stone0);
-	mMaterials["tile0"] = std::move(tile0);
-	//mMaterials["skullMat"] = std::move(skullMat);
-	mMaterials["wedgeMat"] = std::move(wedgeMat);
-	mMaterials["diaMat"] = std::move(diamondMat);
-	mMaterials["octahedronMat"] = std::move(octahedronMat);
-	mMaterials["sky"] = std::move(sky);
-	mMaterials["gold"] = std::move(gold);
-	mMaterials["shineBlue"] = std::move(shineBlue);
-	mMaterials["shineRed"] = std::move(shineRed);
+	mMaterials["redCandy"] = std::move(redCandy);
+	mMaterials["blueCandy"] = std::move(blueCandy);
+	mMaterials["greenCandy"] = std::move(greenCandy);
+	mMaterials["yellowCandy"] = std::move(yellowCandy);
+	mMaterials["purpleCandy"] = std::move(purpleCandy);
+	mMaterials["bucket"] = std::move(bucket);
 }
 
 void LitColumnsApp::BuildRenderItems()
 {
-	FXMVECTOR AxisX = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	FXMVECTOR AxisY = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	FXMVECTOR AxisZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	FLOAT boxWidth = 30;
+	FLOAT boxDepth = 30;
+	FLOAT hWidth = boxWidth * 0.5f;
+	FLOAT hDepth = boxDepth * 0.5f;
 
-	FLOAT boxWidth = rand() % 10 + 1;
-	FLOAT randPos = rand() % 1 + .5f;
-	UINT candyNum = rand() % 50 + 5;
-	FLOAT randAxisX = rand() % 2 - 1;
-	FLOAT randAxisY = rand() % 2 - 1;
-	FLOAT randAxisZ = rand() % 2 - 1;
-	UINT randAngle = rand() % 360 - 10;
-	XMMATRIX canyRotate = XMMatrixRotationAxis(XMVectorSet(randAxisX, randAxisY, randAxisZ, 0.0f), XMConvertToRadians(randAngle));
+	std::random_device rd;
+	std::mt19937 eng(rd());
+	std::uniform_real_distribution<> distrX(-hWidth, hWidth);
+	std::uniform_real_distribution<> distrZ(-hDepth, hDepth);
+	std::uniform_int_distribution<> distrColor(0, 4);
+
+	UINT candyInBucket = 20;
+	UINT lightIndex = 1;
+	UINT colorIndex = 0;
+
+	UINT candyNum = 100;
+	const char* colorNames[] = {
+		"redCandy",
+		"blueCandy",
+		"greenCandy",
+		"yellowCandy",
+		"purpleCandy"
+	};
+
+	XMFLOAT3 colors[] = {
+		XMFLOAT3(Colors::Red),
+		XMFLOAT3(Colors::Blue),
+		XMFLOAT3(Colors::Green),
+		XMFLOAT3(Colors::Yellow)
+	};
 
 	UINT objCBIndex = 0;
 	for (int i = 0; i < candyNum; ++i) {
-		auto pyramidRitem = std::make_unique<RenderItem>();
-		XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(( i * 0.5f)*boxWidth*-1, .8f*randPos, -.7f*randPos));
-		pyramidRitem->TexTransform = MathHelper::Identity4x4();
-		pyramidRitem->Mat = mMaterials["wedgeMat"].get();
-	/*	if (objCBIndex > 2)
-			pyramidRitem->Mat = mMaterials["shineBlue"].get();*/
-		pyramidRitem->ObjCBIndex = objCBIndex++;
-		pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-		pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-		pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-		pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-		mAllRitems.push_back(std::move(pyramidRitem));
+		auto candyRItem = std::make_unique<RenderItem>();
+
+		FLOAT randX = distrX(eng);
+		FLOAT randZ = distrZ(eng);
+		const char * curColor = colorNames[i / 20];
+
+		XMStoreFloat4x4(&candyRItem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(randX, 0.f, randZ));
+		candyRItem->TexTransform = MathHelper::Identity4x4();
+		candyRItem->Mat = mMaterials[curColor].get();
+		candyRItem->ObjCBIndex = objCBIndex++;
+		candyRItem->Geo = mGeometries["shapeGeo"].get();
+		candyRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		candyRItem->IndexCount = candyRItem->Geo->DrawArgs["candy"].IndexCount;
+		candyRItem->StartIndexLocation = candyRItem->Geo->DrawArgs["candy"].StartIndexLocation;
+		candyRItem->BaseVertexLocation = candyRItem->Geo->DrawArgs["candy"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(candyRItem));
 	}
 
-	/*auto pyramidRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(0.f, 0.f, 0.f));
-	XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	pyramidRitem->ObjCBIndex = candyNum+1;
-	pyramidRitem->Mat = mMaterials["wedgeMat"].get();
-	pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-	pyramidRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-	pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-	pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-	mAllRitems.push_back(std::move(pyramidRitem));*/
+	for (int i = 0; i < 2; ++i) {
+		auto bucketRItem = std::make_unique<RenderItem>();
 
-	//auto coneRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(3.f, 2.f, 3.f)*XMMatrixTranslation(0.0f, 7.5f, 6.0f));
-	//XMStoreFloat4x4(&coneRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//coneRitem->ObjCBIndex = 1;
-	//coneRitem->Mat = mMaterials["bricks0"].get();
-	//coneRitem->Geo = mGeometries["shapeGeo"].get();
-	//coneRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
-	//coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-	//coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(coneRitem));
+		FLOAT randX = distrX(eng);
+		FLOAT randZ = distrZ(eng);
 
-	//auto cylinderRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(5.f, 1.f, 5.f)*XMMatrixTranslation(0.0f, 5.f, 6.0f));
-	//XMStoreFloat4x4(&cylinderRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//cylinderRitem->ObjCBIndex = 2;
-	//cylinderRitem->Mat = mMaterials["diaMat"].get();
-	//cylinderRitem->Geo = mGeometries["shapeGeo"].get();
-	//cylinderRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-	//cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-	//cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(cylinderRitem));
+		XMStoreFloat4x4(&bucketRItem->World, XMMatrixScaling(1.f, 1.f, 1.f) * XMMatrixTranslation(randX, 0.f, randZ));
+		bucketRItem->TexTransform = MathHelper::Identity4x4();
+		bucketRItem->Mat = mMaterials["bucket"].get();
+		bucketRItem->ObjCBIndex = objCBIndex++;
+		bucketRItem->Geo = mGeometries["shapeGeo"].get();
+		bucketRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		bucketRItem->IndexCount = bucketRItem->Geo->DrawArgs["squareBucket"].IndexCount;
+		bucketRItem->StartIndexLocation = bucketRItem->Geo->DrawArgs["squareBucket"].StartIndexLocation;
+		bucketRItem->BaseVertexLocation = bucketRItem->Geo->DrawArgs["squareBucket"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(bucketRItem));
 
-	//auto HexagonRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&HexagonRitem->World, XMMatrixScaling(4.5f, 2.0f, 4.5f)*XMMatrixTranslation(0.0f, 2.0f, 6.0f));
-	//XMStoreFloat4x4(&HexagonRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//HexagonRitem->ObjCBIndex = 3;
-	//HexagonRitem->Mat = mMaterials["gold"].get();
-	//HexagonRitem->Geo = mGeometries["shapeGeo"].get();
-	//HexagonRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//HexagonRitem->IndexCount = HexagonRitem->Geo->DrawArgs["hexagon"].IndexCount;
-	//HexagonRitem->StartIndexLocation = HexagonRitem->Geo->DrawArgs["hexagon"].StartIndexLocation;
-	//HexagonRitem->BaseVertexLocation = HexagonRitem->Geo->DrawArgs["hexagon"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(HexagonRitem));
+		std::random_device rdc;
+		std::mt19937 engc(rdc());
+		std::uniform_real_distribution<> distrcX(randX-1.f, randX+1.f);
+		std::uniform_real_distribution<> distrcZ(randZ-1.f, randZ+1.f);
 
-	//auto triPrismRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&triPrismRitem->World, XMMatrixScaling(1.5f, 1.5f, 2.5f)*XMMatrixTranslation(0.0f, 0.5f, -3.0f));
-	//XMStoreFloat4x4(&triPrismRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//triPrismRitem->ObjCBIndex = 4;
-	//triPrismRitem->Mat = mMaterials["sky"].get();
-	//triPrismRitem->Geo = mGeometries["shapeGeo"].get();
-	//triPrismRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//triPrismRitem->IndexCount = triPrismRitem->Geo->DrawArgs["triangularPrism"].IndexCount;
-	//triPrismRitem->StartIndexLocation = triPrismRitem->Geo->DrawArgs["triangularPrism"].StartIndexLocation;
-	//triPrismRitem->BaseVertexLocation = triPrismRitem->Geo->DrawArgs["triangularPrism"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(triPrismRitem));
+		mMainPassCB.Lights[lightIndex].Strength = colors[colorIndex++];
+		mMainPassCB.Lights[lightIndex].Position = XMFLOAT3(randX, 1.2f, randZ);
+		mMainPassCB.Lights[lightIndex].SpotPower = 1.f;
+		mMainPassCB.Lights[lightIndex++].Direction = XMFLOAT3(0.f, 0.f, 0.f);
 
-	//auto octahedronRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&octahedronRitem->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixTranslation(0.0f, 1.5f, -5.0f));
-	//XMStoreFloat4x4(&octahedronRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//octahedronRitem->ObjCBIndex = 5;
-	//octahedronRitem->Mat = mMaterials["octahedronMat"].get();
-	//octahedronRitem->Geo = mGeometries["shapeGeo"].get();
-	//octahedronRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//octahedronRitem->IndexCount = octahedronRitem->Geo->DrawArgs["octahedron"].IndexCount;
-	//octahedronRitem->StartIndexLocation = octahedronRitem->Geo->DrawArgs["octahedron"].StartIndexLocation;
-	//octahedronRitem->BaseVertexLocation = octahedronRitem->Geo->DrawArgs["octahedron"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(octahedronRitem));
+		for (int j = 0; j < candyInBucket; ++j) {
+			auto candyRItem = std::make_unique<RenderItem>();
 
-	//auto boxRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(4.5f, 2.0f, 4.5f)*XMMatrixTranslation(0.0f, 0.5f, 6.0f));
-	//XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//boxRitem->ObjCBIndex = 6;
-	//boxRitem->Mat = mMaterials["shineRed"].get();
-	//boxRitem->Geo = mGeometries["shapeGeo"].get();
-	//boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	//boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	//boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(boxRitem));
+			FLOAT randcX = distrcX(engc);
+			FLOAT randcZ = distrcZ(engc);
 
- //   auto gridRitem = std::make_unique<RenderItem>();
- //   gridRitem->World = MathHelper::Identity4x4();
-	//XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
-	//gridRitem->ObjCBIndex = 7;
-	//gridRitem->Mat = mMaterials["tile0"].get();
-	//gridRitem->Geo = mGeometries["shapeGeo"].get();
-	//gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
- //   gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
- //   gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
- //   gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(gridRitem));
+			XMStoreFloat4x4(&candyRItem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(randcX, 0.f, randcZ));
+			candyRItem->TexTransform = MathHelper::Identity4x4();
+			candyRItem->Mat = mMaterials[colorNames[distrColor(eng)]].get();
+			candyRItem->ObjCBIndex = objCBIndex++;
+			candyRItem->Geo = mGeometries["shapeGeo"].get();
+			candyRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			candyRItem->IndexCount = candyRItem->Geo->DrawArgs["candy"].IndexCount;
+			candyRItem->StartIndexLocation = candyRItem->Geo->DrawArgs["candy"].StartIndexLocation;
+			candyRItem->BaseVertexLocation = candyRItem->Geo->DrawArgs["candy"].BaseVertexLocation;
+			mAllRitems.push_back(std::move(candyRItem));
+		}
+	}
 
-	///*auto skullRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&skullRitem->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-	//skullRitem->TexTransform = MathHelper::Identity4x4();
-	//skullRitem->ObjCBIndex = 3;
-	//skullRitem->Mat = mMaterials["skullMat"].get();
-	//skullRitem->Geo = mGeometries["skullGeo"].get();
-	//skullRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//skullRitem->IndexCount = skullRitem->Geo->DrawArgs["skull"].IndexCount;
-	//skullRitem->StartIndexLocation = skullRitem->Geo->DrawArgs["skull"].StartIndexLocation;
-	//skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(skullRitem));*/
+	for (int i = 0; i < 2; ++i) {
+		auto bucketRItem = std::make_unique<RenderItem>();
 
-	//auto WedgeRitem = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&WedgeRitem->World, XMMatrixScaling(.3f, .4f, 2.5f)*XMMatrixRotationAxis(AxisY,XMConvertToRadians(-90))*XMMatrixTranslation(0.0f, .35f, 2.5f));
-	//XMStoreFloat4x4(&WedgeRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	//WedgeRitem->ObjCBIndex = 8;
-	//WedgeRitem->Mat = mMaterials["wedgeMat"].get();
-	//WedgeRitem->Geo = mGeometries["shapeGeo"].get();
-	//WedgeRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//WedgeRitem->IndexCount = WedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
-	//WedgeRitem->StartIndexLocation = WedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
-	//WedgeRitem->BaseVertexLocation = WedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(WedgeRitem));
+		FLOAT randX = distrX(eng);
+		FLOAT randZ = distrZ(eng);
 
-	////make them to octahedren---
-	//auto diamondRitem1 = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&diamondRitem1->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)* XMMatrixTranslation(-0.7f, 2.7f, -7.7f));
-	//diamondRitem1->TexTransform = MathHelper::Identity4x4();
-	//diamondRitem1->ObjCBIndex = 9;
-	//diamondRitem1->Mat = mMaterials["shineBlue"].get();
-	//diamondRitem1->Geo = mGeometries["shapeGeo"].get();
-	//diamondRitem1->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//diamondRitem1->IndexCount = diamondRitem1->Geo->DrawArgs["diamond"].IndexCount;
-	//diamondRitem1->StartIndexLocation = diamondRitem1->Geo->DrawArgs["diamond"].StartIndexLocation;
-	//diamondRitem1->BaseVertexLocation = diamondRitem1->Geo->DrawArgs["diamond"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(diamondRitem1));
+		XMStoreFloat4x4(&bucketRItem->World, XMMatrixScaling(1.f, 1.f, 1.f) * XMMatrixTranslation(randX, 0.f, randZ));
+		bucketRItem->TexTransform = MathHelper::Identity4x4();
+		bucketRItem->Mat = mMaterials["bucket"].get();
+		bucketRItem->ObjCBIndex = objCBIndex++;
+		bucketRItem->Geo = mGeometries["shapeGeo"].get();
+		bucketRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		bucketRItem->IndexCount = bucketRItem->Geo->DrawArgs["hexagonBucket"].IndexCount;
+		bucketRItem->StartIndexLocation = bucketRItem->Geo->DrawArgs["hexagonBucket"].StartIndexLocation;
+		bucketRItem->BaseVertexLocation = bucketRItem->Geo->DrawArgs["hexagonBucket"].BaseVertexLocation;
+		mAllRitems.push_back(std::move(bucketRItem));
 
-	//auto diamondRitem2 = std::make_unique<RenderItem>();
-	//XMStoreFloat4x4(&diamondRitem2->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)* XMMatrixTranslation(0.7f, 2.7f, -7.7f));
-	//diamondRitem2->TexTransform = MathHelper::Identity4x4();
-	//diamondRitem2->ObjCBIndex = 10;
-	//diamondRitem2->Mat = mMaterials["diaMat"].get();
-	//diamondRitem2->Geo = mGeometries["shapeGeo"].get();
-	//diamondRitem2->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//diamondRitem2->IndexCount = diamondRitem2->Geo->DrawArgs["diamond"].IndexCount;
-	//diamondRitem2->StartIndexLocation = diamondRitem2->Geo->DrawArgs["diamond"].StartIndexLocation;
-	//diamondRitem2->BaseVertexLocation = diamondRitem2->Geo->DrawArgs["diamond"].BaseVertexLocation;
-	//mAllRitems.push_back(std::move(diamondRitem2));
-	////make them to octahedren---
+		mMainPassCB.Lights[lightIndex].Strength = colors[colorIndex++];
+		mMainPassCB.Lights[lightIndex].Position = XMFLOAT3(randX, 0.5f, randZ);
+		mMainPassCB.Lights[lightIndex].SpotPower = 1.f;
+		mMainPassCB.Lights[lightIndex++].Direction = XMFLOAT3(0.f, 0.f, 0.f);
 
-	//XMMATRIX brickTexTransform = XMMatrixScaling(1.0f, 3.0f, 1.0f);
-	//XMMATRIX sphereTransform = XMMatrixScaling(1.4f, 1.4f, 1.4f);
-	//UINT objCBIndex = 11;
-	//for(int i = 0; i < 2; ++i)
-	//{
-	//	auto leftCylRitem = std::make_unique<RenderItem>();
-	//	auto rightCylRitem = std::make_unique<RenderItem>();
-	//	auto leftSphereRitem = std::make_unique<RenderItem>();
-	//	auto rightSphereRitem = std::make_unique<RenderItem>();
+		std::random_device rdc;
+		std::mt19937 engc(rdc());
+		std::uniform_real_distribution<> distrcX(randX - 1.f, randX + 1.f);
+		std::uniform_real_distribution<> distrcZ(randZ - 1.f, randZ + 1.f);
 
-	//	XMMATRIX leftCylWorld = XMMatrixTranslation(-3.0f, 2.f, 1.5f + i*8.9f);
-	//	XMMATRIX rightCylWorld = XMMatrixTranslation(+3.0f, 2.f, 1.5f + i*8.9f);
+		for (int j = 0; j < candyInBucket; ++j) {
+			auto candyRItem = std::make_unique<RenderItem>();
 
-	//	XMMATRIX leftSphereWorld = XMMatrixTranslation(-3.0f, 5.f, 1.5f + i*8.9f);
-	//	XMMATRIX rightSphereWorld = XMMatrixTranslation(+3.0f, 5.f, 1.5f + i*8.9f);
+			FLOAT randcX = distrcX(engc);
+			FLOAT randcZ = distrcZ(engc);
 
-	//	XMStoreFloat4x4(&leftCylRitem->World, brickTexTransform * rightCylWorld);
-	//	XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
-	//	leftCylRitem->ObjCBIndex = objCBIndex++;
-	//	leftCylRitem->Mat = mMaterials["bricks0"].get();
-	//	leftCylRitem->Geo = mGeometries["shapeGeo"].get();
-	//	leftCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs["octagon"].IndexCount;
-	//	leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs["octagon"].StartIndexLocation;
-	//	leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs["octagon"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&rightCylRitem->World, brickTexTransform * leftCylWorld);
-	//	XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
-	//	rightCylRitem->ObjCBIndex = objCBIndex++;
-	//	rightCylRitem->Mat = mMaterials["bricks0"].get();
-	//	rightCylRitem->Geo = mGeometries["shapeGeo"].get();
-	//	rightCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs["octagon"].IndexCount;
-	//	rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs["octagon"].StartIndexLocation;
-	//	rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs["octagon"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&leftSphereRitem->World, sphereTransform*leftSphereWorld);
-	//	leftSphereRitem->ObjCBIndex = objCBIndex++;
-	//	leftSphereRitem->Mat = mMaterials["gold"].get();
-	//	leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
-	//	leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-	//	leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	//	leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&rightSphereRitem->World, sphereTransform*rightSphereWorld);
-	//	rightSphereRitem->TexTransform = MathHelper::Identity4x4();
-	//	rightSphereRitem->ObjCBIndex = objCBIndex++;
-	//	rightSphereRitem->Mat = mMaterials["gold"].get();
-	//	rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
-	//	rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-	//	rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	//	rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-	//	mAllRitems.push_back(std::move(leftCylRitem));
-	//	mAllRitems.push_back(std::move(rightCylRitem));
-	//	mAllRitems.push_back(std::move(leftSphereRitem));
-	//	mAllRitems.push_back(std::move(rightSphereRitem));
-	//}
-
-	//XMMATRIX hexTransform = XMMatrixScaling(.5f, 1.2f, .5f);
-	//XMMATRIX coneTransform = XMMatrixScaling(.7f, .7f, .7f);
-	//objCBIndex = 19;
-	//for (int i = 0; i < 2; ++i)
-	//{
-	//	auto leftHexRitem = std::make_unique<RenderItem>();
-	//	auto righHexRitem = std::make_unique<RenderItem>();
-	//	auto leftSphereRitem = std::make_unique<RenderItem>();
-	//	auto rightSphereRitem = std::make_unique<RenderItem>();
-
-	//	XMMATRIX leftHexWorld = XMMatrixTranslation(-7.0f, .6f, 1.5f + i * 11.f);
-	//	XMMATRIX rightHexWorld = XMMatrixTranslation(+7.0f, .6f, 1.5f + i * 11.f);
-
-	//	XMMATRIX leftSphereWorld = XMMatrixTranslation(-7.0f, 1.6f, 1.5f + i * 11.f);
-	//	XMMATRIX rightSphereWorld = XMMatrixTranslation(+7.0f, 1.6f, 1.5f + i * 11.f);
-
-	//	XMStoreFloat4x4(&leftHexRitem->World, hexTransform*leftHexWorld);
-	//	XMStoreFloat4x4(&leftHexRitem->TexTransform, brickTexTransform);
-	//	leftHexRitem->ObjCBIndex = objCBIndex++;
-	//	leftHexRitem->Mat = mMaterials["diaMat"].get();
-	//	leftHexRitem->Geo = mGeometries["shapeGeo"].get();
-	//	leftHexRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	leftHexRitem->IndexCount = leftHexRitem->Geo->DrawArgs["hexagon"].IndexCount;
-	//	leftHexRitem->StartIndexLocation = leftHexRitem->Geo->DrawArgs["hexagon"].StartIndexLocation;
-	//	leftHexRitem->BaseVertexLocation = leftHexRitem->Geo->DrawArgs["hexagon"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&righHexRitem->World, hexTransform*rightHexWorld);
-	//	XMStoreFloat4x4(&righHexRitem->TexTransform, brickTexTransform);
-	//	righHexRitem->ObjCBIndex = objCBIndex++;
-	//	righHexRitem->Mat = mMaterials["diaMat"].get();
-	//	righHexRitem->Geo = mGeometries["shapeGeo"].get();
-	//	righHexRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	righHexRitem->IndexCount = righHexRitem->Geo->DrawArgs["hexagon"].IndexCount;
-	//	righHexRitem->StartIndexLocation = righHexRitem->Geo->DrawArgs["hexagon"].StartIndexLocation;
-	//	righHexRitem->BaseVertexLocation = righHexRitem->Geo->DrawArgs["hexagon"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&leftSphereRitem->World, coneTransform*leftSphereWorld);
-	//	leftSphereRitem->ObjCBIndex = objCBIndex++;
-	//	leftSphereRitem->Mat = mMaterials["gold"].get();
-	//	leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
-	//	leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["cone"].IndexCount;
-	//	leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-	//	leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-
-	//	XMStoreFloat4x4(&rightSphereRitem->World, coneTransform*rightSphereWorld);
-	//	rightSphereRitem->TexTransform = MathHelper::Identity4x4();
-	//	rightSphereRitem->ObjCBIndex = objCBIndex++;
-	//	rightSphereRitem->Mat = mMaterials["gold"].get();
-	//	rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
-	//	rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	//	rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["cone"].IndexCount;
-	//	rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-	//	rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-
-	//	mAllRitems.push_back(std::move(leftHexRitem));
-	//	mAllRitems.push_back(std::move(righHexRitem));
-	//	mAllRitems.push_back(std::move(leftSphereRitem));
-	//	mAllRitems.push_back(std::move(rightSphereRitem));
-	//}
+			XMStoreFloat4x4(&candyRItem->World, XMMatrixScaling(.5f, .5f, .5f)*XMMatrixTranslation(randcX, 0.f, randcZ));
+			candyRItem->TexTransform = MathHelper::Identity4x4();
+			candyRItem->Mat = mMaterials[colorNames[distrColor(eng)]].get();
+			candyRItem->ObjCBIndex = objCBIndex++;
+			candyRItem->Geo = mGeometries["shapeGeo"].get();
+			candyRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			candyRItem->IndexCount = candyRItem->Geo->DrawArgs["candy"].IndexCount;
+			candyRItem->StartIndexLocation = candyRItem->Geo->DrawArgs["candy"].StartIndexLocation;
+			candyRItem->BaseVertexLocation = candyRItem->Geo->DrawArgs["candy"].BaseVertexLocation;
+			mAllRitems.push_back(std::move(candyRItem));
+		}
+	}
 
 	// All the render items are opaque.
 	for(auto& e : mAllRitems)

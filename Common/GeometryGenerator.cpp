@@ -201,10 +201,10 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSquareBucket(float side, fl
 	v[43] = Vertex(+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Fill in the rim back face vertex data.
-	v[44] = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-	v[45] = Vertex(-iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	v[46] = Vertex(+iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-	v[47] = Vertex(+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+	v[44] = Vertex(+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	v[45] = Vertex(+iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	v[46] = Vertex(-iw, +h2, +id, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	v[47] = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Fill in the rim left face vertex data.
 	v[48] = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -224,7 +224,7 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSquareBucket(float side, fl
 	// Create the indices.
 	//
 
-	uint32 i[108];
+	uint32 i[84];
 
 	// Fill in the front face index data
 	i[0] = 0; i[1] = 1; i[2] = 2;
@@ -266,39 +266,143 @@ GeometryGenerator::MeshData GeometryGenerator::CreateSquareBucket(float side, fl
 	i[54] = 36; i[55] = 38; i[56] = 37;
 	i[57] = 36; i[58] = 39; i[59] = 38;
 
-	//Lid Front
-	i[60] = 1; i[61] = 21; i[62] = 22;
-	i[63] = 1; i[64] = 22; i[65] = 2;
-
-	//Lid Back
-	i[66] = 4; i[67] = 24; i[68] = 25;
-	i[69] = 4; i[70] = 25; i[71] = 5;
-
-	//Lid Left
-	i[72] = 12; i[73] = 32; i[74] = 33;
-	i[75] = 12; i[76] = 33; i[77] = 13;
-
-	//Lid Right
-	i[78] = 16; i[79] = 26; i[80] = 27;
-	i[81] = 16; i[82] = 27; i[83] = 17;
-
 	//Rim Front
-	i[84] = 40; i[85] = 41; i[86] = 42;
-	i[87] = 40; i[88] = 42; i[89] = 43;
+	i[60] = 40; i[61] = 41; i[62] = 42;
+	i[63] = 40; i[64] = 42; i[65] = 43;
 
 	//Rim Back
-	i[90] = 44; i[91] = 45; i[92] = 46;
-	i[93] = 44; i[94] = 46; i[95] = 47;
+	i[66] = 44; i[67] = 45; i[68] = 46;
+	i[69] = 44; i[70] = 46; i[71] = 47;
 
 	//Rim Left
-	i[96] = 48; i[97] = 49; i[98] = 50;
-	i[99] = 48; i[100] = 50; i[101] = 51;
+	i[72] = 48; i[73] = 49; i[74] = 50;
+	i[75] = 48; i[76] = 50; i[77] = 51;
 
 	//Rim Right
-	i[102] = 52; i[103] = 53; i[104] = 54;
-	i[105] = 52; i[106] = 54; i[107] = 55;
+	i[78] = 52; i[79] = 53; i[80] = 54;
+	i[81] = 52; i[82] = 54; i[83] = 55;
 
-	meshData.Indices32.assign(&i[0], &i[108]);
+	meshData.Indices32.assign(&i[0], &i[84]);
+
+	return meshData;
+}
+
+GeometryGenerator::MeshData GeometryGenerator::CreateHexagonBucket(float width, float height)
+{
+	MeshData meshData;
+	float pi = 3.141592f;
+	float r = width / 2;
+
+	float x = cos((2 * pi) / 6)*r;
+	float y = height / 2;
+	float z = sin((2 * pi) / 6)*r;
+
+	XMFLOAT3 pos[24];
+
+	//the top inner 6 vertices
+	for (int i = 0; i < 6; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6) * 2 * r, y, sin((i * 2 * pi) / 6) * 2 * r)
+		};
+	}
+
+	//the top outer 6 vertices
+	for (int i = 6; i < 12; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6) * 3 * r, y, sin((i * 2 * pi) / 6) * 3 * r)
+		};
+	}
+
+	//the bottom inner 6 vertices
+	for (int i = 12; i < 18; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6)*r, -y, sin((i * 2 * pi) / 6)*r)
+		};
+	}
+
+	//the bottom outer 6 vertices
+	for (int i = 18; i < 24; i++)
+	{
+		pos[i] =
+		{
+			XMFLOAT3(cos((i * 2 * pi) / 6) * 2 * r, -y + (y / 10), sin((i * 2 * pi) / 6) * 2 * r)
+		};
+	}
+
+	meshData.Vertices.resize(24);
+
+	for (uint32 i = 0; i < 24; ++i)
+		meshData.Vertices[i].Position = pos[i];
+
+	for (uint32 i = 0; i < meshData.Vertices.size(); ++i)
+	{
+		XMVECTOR n = XMVector3Normalize(XMLoadFloat3(&meshData.Vertices[i].Position));
+		XMStoreFloat3(&meshData.Vertices[i].Normal, n);
+	}
+
+	uint32 i[132] = {
+
+		//Top Faces
+		0,7,6,
+		0,1,7,
+		1,8,7,
+		1,2,8,
+		2,9,8,
+		2,3,9,
+		3,10,9,
+		3,4,10,
+		4,11,10,
+		4,5,11,
+		5,6,11,
+		5,0,6,
+
+		//Inner Faces
+		12,1,0,
+		12,13,1,
+		13,2,1,
+		13,14,2,
+		14,3,2,
+		14,15,3,
+		15,4,3,
+		15,16,4,
+		16,5,4,
+		16,17,5,
+		17,0,5,
+		17,12,0,
+
+		//Bottom Faces
+		18,6,7,
+		18,7,19,
+		19,7,8,
+		19,8,20,
+		20,8,9,
+		20,9,21,
+		21,9,10,
+		21,10,22,
+		22,10,11,
+		22,11,23,
+		23,11,6,
+		23,6,18,
+		//Bottom 4 Triangles
+		12,17,16,
+		12,16,15,
+		12,15,14,
+		12,14,13,
+
+		//Bottom 4 Outer Triangles,
+		18,19,20,
+		18,20,21,
+		18,21,22,
+		18,22,23
+	};
+
+	meshData.Indices32.assign(&i[0], &i[132]);
 
 	return meshData;
 }

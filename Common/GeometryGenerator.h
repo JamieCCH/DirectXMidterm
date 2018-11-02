@@ -167,6 +167,11 @@ public:
   ///</summary>
 	MeshData CreateSquareBucket(float side, float height, float innerSide);
 
+	///<summary>
+	///Create a hexagonal box
+	///</summary>
+	MeshData CreateHexagonBucket(float width, float height);
+
 
 
 private:
