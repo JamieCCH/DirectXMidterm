@@ -129,7 +129,7 @@ private:
 
     float mTheta = 1.5f*XM_PI;
     float mPhi = 0.2f*XM_PI;
-    float mRadius = 15.0f;
+    float mRadius = 35.0f;
 
     POINT mLastMousePos;
 };
@@ -256,7 +256,7 @@ void LitColumnsApp::Draw(const GameTimer& gt)
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
     // Clear the back buffer and depth buffer.
-    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::Black, 0, nullptr);
     mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
     // Specify the buffers we are going to render to.
@@ -639,7 +639,7 @@ void LitColumnsApp::BuildMaterials()
 	redCandy->Name = "redCandy";
 	redCandy->MatCBIndex = 0;
 	redCandy->DiffuseSrvHeapIndex = 0;
-	redCandy->DiffuseAlbedo = XMFLOAT4(Colors::Red);
+	redCandy->DiffuseAlbedo = XMFLOAT4(0.95f, 0.58f, 0.58f,1.0f);
 	redCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	redCandy->Roughness = 0.1f;
 
@@ -647,7 +647,7 @@ void LitColumnsApp::BuildMaterials()
 	blueCandy->Name = "blueCandy";
 	blueCandy->MatCBIndex = 1;
 	blueCandy->DiffuseSrvHeapIndex = 1;
-	blueCandy->DiffuseAlbedo = XMFLOAT4(Colors::Blue);
+	blueCandy->DiffuseAlbedo = XMFLOAT4(0.39f, 0.76f, 0.70f, 1.0f);
 	blueCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	blueCandy->Roughness = 0.1f;
 
@@ -655,7 +655,7 @@ void LitColumnsApp::BuildMaterials()
 	greenCandy->Name = "greenCandy";
 	greenCandy->MatCBIndex = 2;
 	greenCandy->DiffuseSrvHeapIndex = 2;
-	greenCandy->DiffuseAlbedo = XMFLOAT4(Colors::Green);
+	greenCandy->DiffuseAlbedo = XMFLOAT4(Colors::LimeGreen);
 	greenCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	greenCandy->Roughness = 0.1f;
 
@@ -671,7 +671,7 @@ void LitColumnsApp::BuildMaterials()
 	purpleCandy->Name = "purpleCandy";
 	purpleCandy->MatCBIndex = 4;
 	purpleCandy->DiffuseSrvHeapIndex = 4;
-	purpleCandy->DiffuseAlbedo = XMFLOAT4(Colors::Purple);
+	purpleCandy->DiffuseAlbedo = XMFLOAT4(0.66f, 0.58f, 0.85f, 1.0f);
 	purpleCandy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	purpleCandy->Roughness = 0.1f;
 
@@ -679,9 +679,17 @@ void LitColumnsApp::BuildMaterials()
 	bucket->Name = "bucket";
 	bucket->MatCBIndex = 5;
 	bucket->DiffuseSrvHeapIndex = 5;
-	bucket->DiffuseAlbedo = XMFLOAT4(Colors::Beige);
+	bucket->DiffuseAlbedo = XMFLOAT4(0.95f,0.56f,0.18f,1.0f);
 	bucket->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	bucket->Roughness = 0.6f;
+
+	auto lightYellowBucket = std::make_unique<Material>();
+	lightYellowBucket->Name = "lightYellowBucket";
+	lightYellowBucket->MatCBIndex = 6;
+	lightYellowBucket->DiffuseSrvHeapIndex = 6;
+	lightYellowBucket->DiffuseAlbedo = XMFLOAT4(0.99f, 0.99f, 0.7f, 1.0f);
+	lightYellowBucket->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	lightYellowBucket->Roughness = 0.6f;
 	
 	mMaterials["redCandy"] = std::move(redCandy);
 	mMaterials["blueCandy"] = std::move(blueCandy);
@@ -689,6 +697,7 @@ void LitColumnsApp::BuildMaterials()
 	mMaterials["yellowCandy"] = std::move(yellowCandy);
 	mMaterials["purpleCandy"] = std::move(purpleCandy);
 	mMaterials["bucket"] = std::move(bucket);
+	mMaterials["lightYellowBucket"] = std::move(lightYellowBucket);
 }
 
 void LitColumnsApp::BuildRenderItems()
@@ -718,10 +727,10 @@ void LitColumnsApp::BuildRenderItems()
 	};
 
 	XMFLOAT3 colors[] = {
-		XMFLOAT3(Colors::Red),
-		XMFLOAT3(Colors::Blue),
-		XMFLOAT3(Colors::Green),
-		XMFLOAT3(Colors::Yellow)
+		XMFLOAT3(Colors::Pink),
+		XMFLOAT3(Colors::SkyBlue),
+		XMFLOAT3(Colors::LimeGreen),
+		XMFLOAT3(Colors::Yellow),
 	};
 
 	UINT objCBIndex = 0;
@@ -752,7 +761,7 @@ void LitColumnsApp::BuildRenderItems()
 
 		XMStoreFloat4x4(&bucketRItem->World, XMMatrixScaling(1.f, 1.f, 1.f) * XMMatrixTranslation(randX, 0.f, randZ));
 		bucketRItem->TexTransform = MathHelper::Identity4x4();
-		bucketRItem->Mat = mMaterials["bucket"].get();
+		bucketRItem->Mat = mMaterials["lightYellowBucket"].get();
 		bucketRItem->ObjCBIndex = objCBIndex++;
 		bucketRItem->Geo = mGeometries["shapeGeo"].get();
 		bucketRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
